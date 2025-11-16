@@ -15,13 +15,12 @@ pipeline {
             steps {
                 script {
                     echo "-------- Starting Deployment --------"
-                    
-                    // Update deployment image
+
                     sh """
-                        kubectl set image deployment/${params.App_Name} ${params.App_Name}=abhi9604/datastore:${params.App_Version} --record
-                        kubectl rollout status deployment/${params.App_Name}
+                        kubectl set image deployment/${params.App_Name} mywebapp=abhi9604/datastore:${params.App_Version} --record
+                        kubectl rollout status deployment/${params.App_Name} || exit 1
                     """
-                    
+
                     echo "-------- Deployment Completed Successfully --------"
                 }
             }
