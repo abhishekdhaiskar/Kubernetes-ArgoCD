@@ -1,57 +1,26 @@
 pipeline {
     agent any
 
-    // Parameters allow dynamic deployment of different images or deployments
     parameters {
-        string(name: "App_Name", defaultValue: "datastore-deploy", description: "Kubernetes deployment name")
-        string(name: "App_Version", defaultValue: "latest", description: "Docker image version to deploy")
-    }
-
-    // Kubernetes config stored as Jenkins secret
-    environment {
-        KUBECONFIG = credentials('K8S_CONFIG_SECRET')
+        string(name: "App_Name")
+        string(name: "App_Version")
     }
 
     stages {
-
-        stage('Checkout Deployment Repo') {
+        stage("Checkout CD Repo") {
             steps {
-                echo "-------- Checking out Deployment Repo --------"
-                // Only needed if you have deployment YAML in a repo
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/abhishekdhaiskar/Kubernetes-ArgoCD.git'
-                        // No credentials needed for public repo
-                    ]]
-                ])
+                git branch: 'main', url: 'https://github.com/abhishekdhaiskar/Kubernetes-ArgoCD.git'
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage("Deploy to Kubernetes") {
             steps {
-                script {
-                    echo "-------- Starting Deployment --------"
+                echo "Deploying ${params.App_Name} version ${params.App_Version}"
 
-                    // Update deployment image and wait for rollout
-                    sh """
-                        kubectl set image deployment/${params.App_Name} mywebapp=abhi9604/datastore:${params.App_Version} --record
-                        kubectl rollout status deployment/${params.App_Name} || exit 1
-                    """
-
-                    echo "-------- Deployment Completed Successfully --------"
-                }
+                sh """
+                    kubectl apply -f datastore-deploy/datastore-deploy.yaml
+                """
             }
-        }
-    }
-
-    post {
-        success {
-            echo "✅ Deployment pipeline finished successfully."
-        }
-        failure {
-            echo "❌ Deployment pipeline failed!"
         }
     }
 }
