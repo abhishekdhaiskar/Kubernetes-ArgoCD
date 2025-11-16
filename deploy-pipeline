@@ -18,20 +18,21 @@ pipeline {
             }
         }
 
-   stage("Deploy to Kubernetes") {
-      steps {
-         withEnv(["KUBECONFIG=/home/jenkins/.kube/config"]) {
-            sh """
-                # Apply deployment using absolute path
-                kubectl apply -f /var/lib/jenkins/workspace/DataStore/datastore-deploy/datastore-deploy.yaml --validate=false
-
-                # Optional: check pods
-                kubectl get pods -o wide
-            """
+        stage("Deploy to Kubernetes") {
+            steps {
+                withEnv(["KUBECONFIG=${env.KUBECONFIG}"]) {
+                    sh """
+                        echo "Deploying ${params.App_Name} version ${params.App_Version}..."
+                        
+                        # Apply deployment using relative path inside workspace
+                        kubectl apply -f ${WORKSPACE}/datastore-deploy/datastore-deploy.yaml --validate=false
+                        
+                        # Optional: check pods
+                        kubectl get pods -o wide
+                    """
+                }
+            }
         }
-    }
-}
-
     }
 
     post {
