@@ -2,13 +2,18 @@ pipeline {
     agent any
 
     parameters {
-        string(name: "App_Name")
-        string(name: "App_Version")
+        string(name: "App_Name", description: "Provide the application name")
+        string(name: "App_Version", description: "Provide the application version")
+    }
+
+    environment {
+        KUBECONFIG = "/home/jenkins/.kube/config"
     }
 
     stages {
         stage("Checkout CD Repo") {
             steps {
+                echo "Cloning CD repository..."
                 git branch: 'main', url: 'https://github.com/abhishekdhaiskar/Kubernetes-ArgoCD.git'
             }
         }
@@ -17,10 +22,30 @@ pipeline {
             steps {
                 echo "Deploying ${params.App_Name} version ${params.App_Version}"
 
-                sh """
-                    kubectl apply -f datastore-deploy/datastore-deploy.yaml
-                """
+                withEnv(["KUBECONFIG=${env.KUBECONFIG}"]) {
+                    sh """
+                        # Apply deployment manifest without OpenAPI validation
+                        kubectl apply -f datastore-deploy/datastore-deploy.yaml --validate=false
+                        
+                        # Optional: check pods status
+                        kubectl get pods -o wide
+                    """
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment completed successfully."
+        }
+
+        failure {
+            echo "❌ Deployment failed. Check logs for details."
+        }
+
+        always {
+            echo "ℹ️ CD pipeline finished."
         }
     }
 }
