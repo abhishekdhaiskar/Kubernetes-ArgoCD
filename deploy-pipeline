@@ -1,21 +1,40 @@
 pipeline {
     agent any
 
+    // Parameters allow dynamic deployment of different images or deployments
     parameters {
         string(name: "App_Name", defaultValue: "datastore-deploy", description: "Kubernetes deployment name")
         string(name: "App_Version", defaultValue: "latest", description: "Docker image version to deploy")
     }
 
+    // Kubernetes config stored as Jenkins secret
     environment {
-        KUBECONFIG = credentials('K8S_CONFIG_SECRET') // Kubernetes config stored as Jenkins Secret
+        KUBECONFIG = credentials('K8S_CONFIG_SECRET')
     }
 
     stages {
+
+        stage('Checkout Deployment Repo') {
+            steps {
+                echo "-------- Checking out Deployment Repo --------"
+                // Only needed if you have deployment YAML in a repo
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/abhishekdhaiskar/Kubernetes-ArgoCD.git'
+                        // No credentials needed for public repo
+                    ]]
+                ])
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 script {
                     echo "-------- Starting Deployment --------"
 
+                    // Update deployment image and wait for rollout
                     sh """
                         kubectl set image deployment/${params.App_Name} mywebapp=abhi9604/datastore:${params.App_Version} --record
                         kubectl rollout status deployment/${params.App_Name} || exit 1
@@ -24,6 +43,15 @@ pipeline {
                     echo "-------- Deployment Completed Successfully --------"
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment pipeline finished successfully."
+        }
+        failure {
+            echo "❌ Deployment pipeline failed!"
         }
     }
 }
