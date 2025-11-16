@@ -18,21 +18,20 @@ pipeline {
             }
         }
 
-        stage("Deploy to Kubernetes") {
-            steps {
-                echo "Deploying ${params.App_Name} version ${params.App_Version}"
+   stage("Deploy to Kubernetes") {
+      steps {
+         withEnv(["KUBECONFIG=/home/jenkins/.kube/config"]) {
+            sh """
+                # Apply deployment using absolute path
+                kubectl apply -f /var/lib/jenkins/workspace/DataStore/datastore-deploy/datastore-deploy.yaml --validate=false
 
-                withEnv(["KUBECONFIG=${env.KUBECONFIG}"]) {
-                    sh """
-                        # Apply deployment manifest without OpenAPI validation
-                        kubectl apply -f datastore-deploy/datastore-deploy.yaml --validate=false
-                        
-                        # Optional: check pods status
-                        kubectl get pods -o wide
-                    """
-                }
-            }
+                # Optional: check pods
+                kubectl get pods -o wide
+            """
         }
+    }
+}
+
     }
 
     post {
