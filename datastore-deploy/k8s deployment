@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    environment {
+        KUBECONFIG = credentials('K8S_CONFIG_SECRET') // Kubernetes config stored as Jenkins Secret
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/your-org/your-repo.git', branch: 'main'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t my-app:latest .'
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh 'docker tag my-app:latest myregistry/my-app:latest'
+                    sh 'docker push myregistry/my-app:latest'
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                }
+            }
+        }
+    }
+}
