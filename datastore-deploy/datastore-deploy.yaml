@@ -5,6 +5,10 @@ metadata:
   labels:
     type: webapp
 spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      type: webapp
   template:
     metadata:
       name: myapp-pod
@@ -13,8 +17,4 @@ spec:
     spec:
       containers:
         - name: mywebapp
-          image: docker pull abhi9604/datastore:v1.0  #8072388539/datastore:v1.0
-  replicas: 3
-  selector:
-    matchLabels:
-      type: webapp
+          image: abhi9604/datastore:v1.0
